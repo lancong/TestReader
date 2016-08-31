@@ -22,6 +22,7 @@ public class TcpDumpActivity extends AppCompatActivity {
 
     private long time;
 
+    private boolean flag;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

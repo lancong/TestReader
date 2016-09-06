@@ -1,15 +1,9 @@
 package com.iresearch.pcap.pcapreader.core;
 
-import android.app.ActivityManager;
 import android.content.Context;
 
 import com.iresearch.pcap.pcapreader.utils.LogUtils;
 import com.iresearch.pcap.pcapreader.utils.Logger;
-
-import java.util.Iterator;
-import java.util.List;
-
-import static android.content.Context.ACTIVITY_SERVICE;
 
 
 /**
@@ -25,27 +19,7 @@ public class PackageInfos {
         this.context = context;
     }
 
-    public String getAppName(int pID) {
-        String processName = "";
-        ActivityManager am = (ActivityManager) context.getSystemService(ACTIVITY_SERVICE);
-        List l = am.getRunningAppProcesses();
-        Iterator i = l.iterator();
-        android.content.pm.PackageManager pm = context.getPackageManager();
-        while (i.hasNext()) {
-            ActivityManager.RunningAppProcessInfo info = (ActivityManager.RunningAppProcessInfo) (i.next());
-            try {
-                if (info.pid == pID) {
-//                    CharSequence c = pm.getApplicationLabel(pm.getApplicationInfo(info.processName, PackageInfos.GET_META_DATA));
-                    //Log.d("Process", "Id: "+ info.pid +" ProcessName: "+ info.processName +"  Label: "+c.toString());
-                    //processName = c.toString();
-                    processName = info.processName;
-                }
-            } catch (Exception e) {
-                //Log.d("Process", "Error>> :"+ e.toString());
-            }
-        }
-        return processName;
-    }
+
 
 
     public String getPackage(String uid) {

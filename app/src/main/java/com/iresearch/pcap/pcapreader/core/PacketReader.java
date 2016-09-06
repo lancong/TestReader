@@ -1,12 +1,7 @@
-package com.iresearch.pcap.pcapreader.activity;
+package com.iresearch.pcap.pcapreader.core;
 
-import android.app.Activity;
-import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 
-import com.iresearch.pcap.pcapreader.R;
-import com.iresearch.pcap.pcapreader.core.PackageInfos;
 import com.iresearch.pcap.pcapreader.core.command.CommandExecutor;
 import com.iresearch.pcap.pcapreader.utils.LogUtils;
 import com.iresearch.pcap.pcapreader.utils.Logger;
@@ -29,6 +24,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.ArrayList;
 
 
@@ -38,7 +34,7 @@ import java.util.ArrayList;
  * email : wyh_it@163.com
  * time  : 2016/8/29
  */
-public class PacketReaderActivity extends AppCompatActivity {
+public class PacketReader {
 
     // Variable declarations for handling the settings.
 //    private SharedPreferences settings = null;
@@ -61,12 +57,11 @@ public class PacketReaderActivity extends AppCompatActivity {
     private int i = 0;
     private String packageName;
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_packet_reader);
 
+
+
+   /* public void onCreate() {
         packets = new ArrayList<JPacket>();
 
         // Parsing the packets form the .pcap file.
@@ -81,42 +76,71 @@ public class PacketReaderActivity extends AppCompatActivity {
                 }
             }
         }).start();
+    }*/
 
 
 
+    public void Start(String filePath){
+        packets = new ArrayList<JPacket>();
+
+        // Parsing the packets form the .pcap file.
+        getPackets(filePath);
+        // Binding the ArrayAdapter with the view for each row of the ListView.
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for (int j = 0; j <  packets.size(); j++) {
+                    getPacketInfo(packets);
+                }
+            }
+        }).start();
     }
+
 
     /**
      * Opens the .pcap file which is defined in the preferences and parses all
      * the packets that it contains.<br>
      * The packet data is copied into the JPacket ArrayList.
      */
-    private void getPackets() {
+    private void getPackets(String filePath) {
 
         StringBuilder errbuf = new StringBuilder();
 
         // Opening the .pcap file.
 
-        String path = getSharedPreferences("config", Activity.MODE_PRIVATE).getString("pcapPath", "");
-        Logger.d("当前使用的路径" + path);
+//        String path = getSharedPreferences("config", Activity.MODE_PRIVATE).getString("pcapPath", "");
+
+        Logger.d("当前使用的路径:              " + filePath);
+        File file = new File(filePath);
+        if (file.exists()){
+            LogUtils.d("文件存在");
+        }else {
+            LogUtils.d("文件不存在");
+        }
+
 //        "/mnt/sdcard/2016_08_24_10_33_38.pcap"
-        final Pcap parser = Pcap.openOffline(path, errbuf);
+        Pcap parser = Pcap.openOffline(filePath, errbuf);
 
+        if (parser!=null){
+            LogUtils.e("解析成功，开始解析");
+            // Creating a handler for packet capture.
+            JPacketHandler<String> handler = new JPacketHandler<String>() {
 
-        // Creating a handler for packet capture.
-        final JPacketHandler<String> handler = new JPacketHandler<String>() {
+                // Defining the action that will be performed each time a packet is
+                // read for the file.
+                @Override
+                public void nextPacket(JPacket packet, String user) {
+                    packets.add(packet);
 
-            // Defining the action that will be performed each time a packet is
-            // read for the file.
-            @Override
-            public void nextPacket(JPacket packet, String user) {
-                packets.add(packet);
+                }
+            };
 
-            }
-        };
+            parser.loop(-1, handler, null);
+            parser.close();
+        }else {
+           LogUtils.d("解析失败，出现名称错误");
+        }
 
-        parser.loop(-1, handler, null);
-        parser.close();
     }
 
     /**
@@ -136,7 +160,6 @@ public class PacketReaderActivity extends AppCompatActivity {
         Http http = new Http();
         Rtp rtp = new Rtp();
 
-//            Log.d(TAG, "getView: headercount:"+headerCount+"\nallocatedmemory"+allocatedMemorySize+"\nframenumber"+frameNumber+"\n tostirng"+s);
         Logger.i("--------------------------------------------------------------------------");
 
         JCaptureHeader captureHeader = p.getCaptureHeader();
@@ -176,7 +199,7 @@ public class PacketReaderActivity extends AppCompatActivity {
 
                             if (!TextUtils.isEmpty(uid)){
                                 LogUtils.d("111111");
-                                packageName = new PackageInfos(PacketReaderActivity.this).getPackage(uid);
+                                packageName = new PackageInfos(MyApplication.getContext()).getPackage(uid);
                             }else {
                                 LogUtils.d("22222222");
                                 packageName = "";
@@ -274,11 +297,15 @@ public class PacketReaderActivity extends AppCompatActivity {
             json.put("ip", destinationIP);
             json.put("port", destinationPort);
             json.put("startmillistime", time);
-            json.put("endmillistime", null);
+            json.put("endmillistime", 0);
             Logger.d("getView: 当前json数据" + json.toString());
         } catch (JSONException e) {
             e.printStackTrace();
+
         }
 
     }
+
+
+
 }
